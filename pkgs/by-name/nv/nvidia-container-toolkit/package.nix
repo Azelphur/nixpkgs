@@ -1,6 +1,6 @@
 { lib
 , glibc
-, fetchFromGitLab
+, fetchFromGitHub
 , makeWrapper
 , buildGoModule
 , formats
@@ -16,19 +16,18 @@ assert configTemplatePath != null -> (lib.isStringLike configTemplatePath && con
 let
   configToml = if configTemplatePath != null then configTemplatePath else (formats.toml { }).generate "config.toml" configTemplate;
 
-  # From https://gitlab.com/nvidia/container-toolkit/container-toolkit/-/blob/03cbf9c6cd26c75afef8a2dd68e0306aace80401/Makefile#L54
+  # From https://github.com/NVIDIA/nvidia-container-toolkit/blob/main/Makefile#L54
   cliVersionPackage = "github.com/NVIDIA/nvidia-container-toolkit/internal/info";
 in
 buildGoModule rec {
-  pname = "container-toolkit/container-toolkit";
-  version = "1.15.0-rc.3";
+  pname = "nvidia-container-toolkit";
+  version = "1.16.2";
 
-  src = fetchFromGitLab {
-    owner = "nvidia";
+  src = fetchFromGitHub {
+    owner = "NVIDIA";
     repo = pname;
     rev = "v${version}";
-    hash = "sha256-IH2OjaLbcKSGG44aggolAOuJkjk+GaXnnTbrXfZ0lVo=";
-
+    hash = "sha256-ldEBF+5zuJAyDSUVnMPja2BvdMCNMDkp0Ye5+qFEm14=";
   };
 
   outputs = [ "out" "tools" ];
@@ -40,6 +39,7 @@ buildGoModule rec {
     # before falling back to the regular symlink location and ldcache location.
     ./0001-Add-dlopen-discoverer.patch
   ];
+  excludedPackages = [ "deployments/devel" ];
 
   postPatch = ''
     # Replace the default hookDefaultFilePath to the $out path and override
@@ -55,7 +55,7 @@ buildGoModule rec {
     substituteInPlace tools/container/toolkit/toolkit.go \
       --replace '/sbin/ldconfig' '${lib.getBin glibc}/sbin/ldconfig'
 
-    substituteInPlace cmd/nvidia-ctk/hook/update-ldcache/update-ldcache.go \
+    substituteInPlace cmd/nvidia-cdi-hook/update-ldcache/update-ldcache.go \
       --replace '/sbin/ldconfig' '${lib.getBin glibc}/sbin/ldconfig'
   '';
 
